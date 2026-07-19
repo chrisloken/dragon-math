@@ -1,6 +1,6 @@
 import { Y_LANE_MAX, Y_LANE_MIN } from './constants'
 import { asTableFactor, pickReward, randomFact, randomInt } from './facts'
-import type { Direction, Dragon, FactCorrectCounts } from './types'
+import type { Direction, Dragon, FactCorrectCounts, TableFactor } from './types'
 
 let nextId = 1
 
@@ -9,8 +9,9 @@ export function createDragon(
   occupiedLanes: number[],
   correctCounts: FactCorrectCounts = {},
   allowFood = false,
+  awardedTables: ReadonlySet<TableFactor> = new Set(),
 ): Dragon {
-  const { factA, factB, answer } = randomFact(correctCounts)
+  const { factA, factB, answer } = randomFact(correctCounts, awardedTables)
   const direction: Direction = Math.random() < 0.5 ? 'ltr' : 'rtl'
   const yLane = pickLane(occupiedLanes)
   const speedJitter = 0.85 + Math.random() * 0.3

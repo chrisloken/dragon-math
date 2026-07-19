@@ -21,6 +21,7 @@ export {
   TABLE_FACTORS,
   emptyRoundStats,
   factKey,
+  allEggsUnlocked,
 } from './constants'
 export { createDragon, advanceDragons } from './dragon'
 export {

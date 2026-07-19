@@ -41,10 +41,18 @@ export const FOOD_PER_LEVEL = 10
 
 export const TABLE_FACTORS: TableFactor[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-export function getRoundConfig(round: number): RoundConfig {
-  const r = Math.max(1, round)
+export function allEggsUnlocked(awardedCount: number): boolean {
+  return awardedCount >= TABLE_FACTORS.length
+}
+
+export function getRoundConfig(
+  round: number,
+  eggsUnlocked = false,
+): RoundConfig {
+  // Hold difficulty at round-1 until every times-table egg is awarded.
+  const r = eggsUnlocked ? Math.max(1, round) : 1
   return {
-    round: r,
+    round: Math.max(1, round),
     maxDragons: BASE_MAX_DRAGONS + (r - 1) * CONCURRENT_DRAGONS_PER_ROUND,
     baseSpeed: BASE_SPEED * Math.pow(SPEED_GROWTH, r - 1),
     spawnIntervalMs: Math.max(

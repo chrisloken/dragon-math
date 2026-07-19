@@ -70,15 +70,24 @@ function nearEggBoost(
  * Table color (factA) is nearly even so all 10 dragon colors appear.
  * The other factor keeps a strong low-number bias that fades with practice.
  * Facts that finish an almost-complete egg (1–2 left) are strongly boosted.
+ * After an egg is awarded, that table’s facts are hidden until all eggs unlock.
  */
-export function randomFact(correctCounts: FactCorrectCounts = {}): {
+export function randomFact(
+  correctCounts: FactCorrectCounts = {},
+  awardedTables: ReadonlySet<TableFactor> = new Set(),
+): {
   factA: number
   factB: number
   answer: number
 } {
+  const eggsComplete = awardedTables.size >= TABLE_FACTORS.length
   const pool: { factA: number; factB: number; weight: number }[] = []
   for (let a = FACT_MIN; a <= FACT_MAX; a++) {
     for (let b = FACT_MIN; b <= FACT_MAX; b++) {
+      // Hide awarded-table facts (N×…) until every egg is unlocked
+      if (!eggsComplete && awardedTables.has(a as TableFactor)) {
+        continue
+      }
       const count = correctCounts[factKey(a, b)] ?? 0
       // Mild table preference only — keeps all colors visible
       const tableWeight = 1 + (11 - a) * 0.08
@@ -94,6 +103,11 @@ export function randomFact(correctCounts: FactCorrectCounts = {}): {
         weight: tableWeight * otherBias * practiced * familiarity * eggBoost,
       })
     }
+  }
+
+  // Safety: if the pool is empty, fall back to any fact
+  if (pool.length === 0) {
+    return { factA: 1, factB: 1, answer: 1 }
   }
 
   const total = pool.reduce((sum, item) => sum + item.weight, 0)

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   advanceDragons,
+  allEggsUnlocked,
   anyHatched,
   applyTreasureToEggs,
   bumpFactCounts,
@@ -123,7 +124,9 @@ export function useGame() {
   useEffect(() => {
     if (paused) return
 
-    const config = getRoundConfig(round)
+    const eggsUnlocked = allEggsUnlocked(petsRef.current.length)
+    const awardedTables = new Set(petsRef.current.map((p) => p.table))
+    const config = getRoundConfig(round, eggsUnlocked)
     let cancelled = false
 
     const spawnOne = () => {
@@ -132,11 +135,13 @@ export function useGame() {
       if (dragonsRef.current.length >= config.maxDragons) return
 
       const allowFood = anyHatched(petsRef.current)
+      const tables = new Set(petsRef.current.map((p) => p.table))
       const dragon = createDragon(
         config.baseSpeed,
         dragonsRef.current.map((d) => d.yLane),
         factCountsRef.current,
         allowFood,
+        tables,
       )
 
       // Increment outside the setState updater so StrictMode double-invoke
@@ -158,6 +163,7 @@ export function useGame() {
             seeded.map((d) => d.yLane),
             factCountsRef.current,
             allowFood,
+            awardedTables,
           ),
         )
       }

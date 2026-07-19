@@ -634,6 +634,8 @@
   width: 72px;
   transform-origin: center bottom;
   transition: transform 0.4s ease;
+  --dragon-body: #3d9b6a;
+  --dragon-dark: #2f6b4f;
 }
 
 .pet-dragon-svg {
@@ -641,6 +643,21 @@
   height: auto;
   display: block;
   filter: drop-shadow(0 3px 2px var(--shadow));
+}
+
+.pet-dragon .pet-torso,
+.pet-dragon .pet-head,
+.pet-dragon .pet-horn {
+  fill: var(--dragon-body);
+}
+
+.pet-dragon .pet-wing,
+.pet-dragon .pet-tail {
+  fill: var(--dragon-dark);
+}
+
+.pet-dragon .pet-aura {
+  stroke: var(--dragon-body);
 }
 
 .pet-bonus {
