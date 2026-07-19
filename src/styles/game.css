@@ -56,10 +56,13 @@
 
 .dragon {
   position: absolute;
-  width: min(130px, 16vw);
+  width: min(210px, 24vw);
   will-change: left, top;
   --dragon-body: #3d9b6a;
   --dragon-dark: #2f6b4f;
+  --dragon-membrane-hot: color-mix(in srgb, var(--dragon-body) 35%, #fde68a);
+  --dragon-membrane-mid: var(--dragon-body);
+  --dragon-membrane-edge: color-mix(in srgb, var(--dragon-dark) 70%, #3b0a0a);
 }
 
 /* Table colors must come after .dragon defaults (same specificity otherwise). */
@@ -97,59 +100,108 @@
   overflow: visible;
 }
 
-.dragon-puppet .fill-body {
-  fill: var(--dragon-body);
+/* Silhouette: dark charcoal tinted by table color */
+.dragon-puppet .fill-silhouette {
+  fill: color-mix(in srgb, var(--dragon-dark) 78%, #050505);
 }
 
-.dragon-puppet .fill-dark {
-  fill: var(--dragon-dark);
-}
-
-.dragon-puppet .fill-accent {
-  fill: color-mix(in srgb, var(--dragon-body) 55%, #fde68a);
-}
-
-.dragon-puppet .fill-eye {
-  fill: #fff8e7;
-}
-
-.dragon-puppet .fill-pupil {
-  fill: #1a1a1a;
+.dragon-puppet .fill-highlight {
+  fill: color-mix(in srgb, var(--dragon-body) 28%, #1a1a1a);
+  opacity: 0.55;
 }
 
 .dragon-puppet .stroke-bone {
-  stroke: color-mix(in srgb, var(--dragon-dark) 70%, #fff8e7);
+  stroke: color-mix(in srgb, var(--dragon-dark) 55%, #0a0a0a);
 }
 
+.dragon-puppet .stroke-ridge {
+  stroke: color-mix(in srgb, var(--dragon-dark) 50%, #000);
+}
+
+.dragon-puppet .fill-ember {
+  fill: color-mix(in srgb, var(--dragon-body) 50%, #fbbf24);
+}
+
+.dragon-puppet .fill-mouth {
+  fill: color-mix(in srgb, var(--dragon-body) 35%, #fb923c);
+}
+
+.dragon-puppet .fill-eye-glow {
+  fill: color-mix(in srgb, var(--dragon-body) 45%, #fdba74);
+  opacity: 0.55;
+}
+
+.dragon-puppet .fill-eye {
+  fill: color-mix(in srgb, var(--dragon-body) 30%, #ffedd5);
+}
+
+.dragon-puppet .fill-pupil {
+  fill: #0a0a0a;
+}
+
+/* Parent wing groups do not rotate — articulation is on segments */
 .puppet-wing--front,
 .puppet-wing--back {
+  transform-box: view-box;
+}
+
+/*
+ * Z-axis flap (toward the viewer): scaleY around the shoulder.
+ * +1 = wing up above the body, −1 = wing flipped straight down below.
+ * No yaw rotate — that was the awkward left/right sweep.
+ * Seg 0 (largest, head-side) leads; smaller segs follow.
+ */
+.puppet-wing-seg {
+  transform-box: view-box;
+  transform-origin: 168px 70px;
+  animation: flap-wing 0.68s ease-in-out infinite alternate;
+}
+
+.puppet-wing-seg--0 {
+  animation-delay: 0s;
+}
+
+.puppet-wing-seg--1 {
+  animation-delay: 0.1s;
+}
+
+.puppet-wing-seg--2 {
+  animation-delay: 0.2s;
+}
+
+.puppet-wing-seg--3 {
+  animation-delay: 0.3s;
+}
+
+@keyframes flap-wing {
+  0% {
+    transform: scaleY(1);
+  }
+  45% {
+    /* Edge-on to the camera mid-flap */
+    transform: scaleY(0.1) scaleX(1.06);
+  }
+  55% {
+    transform: scaleY(-0.1) scaleX(1.06);
+  }
+  100% {
+    transform: scaleY(-1);
+  }
+}
+
+.puppet-neck {
   transform-box: fill-box;
-  transform-origin: right center;
+  transform-origin: left center;
+  /* Subtle stretch along the spine — do not lift the head */
+  animation: neck-sway 1.2s ease-in-out infinite alternate;
 }
 
-.puppet-wing--front {
-  animation: flap-front 0.42s ease-in-out infinite alternate;
-}
-
-.puppet-wing--back {
-  animation: flap-back 0.42s ease-in-out infinite alternate;
-}
-
-@keyframes flap-front {
+@keyframes neck-sway {
   from {
-    transform: rotate(-8deg) scaleY(0.95);
+    transform: translateX(0);
   }
   to {
-    transform: rotate(14deg) scaleY(1.1);
-  }
-}
-
-@keyframes flap-back {
-  from {
-    transform: rotate(6deg) scaleY(1.05);
-  }
-  to {
-    transform: rotate(-10deg) scaleY(0.92);
+    transform: translateX(1px);
   }
 }
 
@@ -161,25 +213,41 @@
 
 @keyframes head-bob {
   from {
-    transform: rotate(-2deg) translateY(0);
+    transform: translateY(0);
   }
   to {
-    transform: rotate(3deg) translateY(-1.5px);
+    transform: translateY(1px);
   }
 }
 
 .puppet-tail {
-  transform-box: fill-box;
-  transform-origin: right center;
-  animation: tail-sway 0.9s ease-in-out infinite alternate;
+  transform-box: view-box;
+  transform-origin: 118px 72px;
+  animation: tail-sway 0.95s ease-in-out infinite alternate;
 }
 
 @keyframes tail-sway {
   from {
-    transform: rotate(4deg);
+    transform: rotate(2deg);
   }
   to {
-    transform: rotate(-6deg);
+    transform: rotate(-3deg);
+  }
+}
+
+.puppet-legs {
+  transform-box: fill-box;
+  transform-origin: right center;
+  /* Stream back with the tail — no downward tuck */
+  animation: legs-stream 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes legs-stream {
+  from {
+    transform: rotate(1deg);
+  }
+  to {
+    transform: rotate(-2deg);
   }
 }
 
@@ -190,8 +258,11 @@
 
 .dragon--teleport .puppet-wing--front,
 .dragon--teleport .puppet-wing--back,
+.dragon--teleport .puppet-wing-seg,
 .dragon--teleport .puppet-head,
-.dragon--teleport .puppet-tail {
+.dragon--teleport .puppet-neck,
+.dragon--teleport .puppet-tail,
+.dragon--teleport .puppet-legs {
   animation: none;
 }
 
@@ -693,8 +764,8 @@
 }
 
 .egg-sprite--nest {
-  width: 40px;
-  height: 50px;
+  width: 32px;
+  height: 40px;
   animation: egg-wobble 2.4s ease-in-out infinite;
 }
 
@@ -715,10 +786,12 @@
   bottom: 26%;
   z-index: 4;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
+  flex-wrap: nowrap;
+  align-items: flex-end;
+  gap: 0.35rem;
   pointer-events: none;
-  max-width: 42%;
+  max-width: min(96%, 920px);
+  overflow-x: auto;
 }
 
 .pet-card {
@@ -726,12 +799,13 @@
   flex-direction: column;
   align-items: center;
   gap: 0.15rem;
-  padding: 0.35rem 0.45rem;
+  padding: 0.3rem 0.35rem;
   background: rgba(13, 39, 64, 0.5);
   border: 2px solid rgba(255, 248, 231, 0.3);
   border-radius: 12px;
   color: var(--paper);
-  min-width: 64px;
+  min-width: 52px;
+  flex: 0 0 auto;
 }
 
 .pet-label,
@@ -744,9 +818,12 @@
 }
 
 .pet-dragon {
-  width: 72px;
+  width: 64px;
   transform-origin: center bottom;
   transition: transform 0.4s ease;
+  --dragon-membrane-hot: color-mix(in srgb, var(--dragon-body) 35%, #fde68a);
+  --dragon-membrane-mid: var(--dragon-body);
+  --dragon-membrane-edge: color-mix(in srgb, var(--dragon-dark) 70%, #3b0a0a);
 }
 
 .pet-dragon .dragon-puppet {

@@ -8,9 +8,11 @@ interface PetsRackProps {
 export function PetsRack({ pets }: PetsRackProps) {
   if (pets.length === 0) return null
 
+  const ordered = [...pets].sort((a, b) => a.table - b.table)
+
   return (
     <div className="pets-rack" aria-label="Your dragon eggs and pets">
-      {pets.map((pet) => (
+      {ordered.map((pet) => (
         <PetCard key={pet.table} pet={pet} />
       ))}
     </div>

@@ -29,9 +29,10 @@ export const BASE_SPAWN_INTERVAL_MS = 1800
 
 /** Extra concurrent dragons per round beyond round 1. */
 export const CONCURRENT_DRAGONS_PER_ROUND = 1
-export const SPEED_GROWTH = 1.12
-export const SPAWN_INTERVAL_SHRINK = 0.92
-export const MIN_SPAWN_INTERVAL_MS = 700
+/** Mild speed ramp — was 1.12 (12%/round); keep difficulty gentle. */
+export const SPEED_GROWTH = 1.05
+export const SPAWN_INTERVAL_SHRINK = 0.96
+export const MIN_SPAWN_INTERVAL_MS = 900
 
 export const Y_LANE_MIN = 8
 export const Y_LANE_MAX = 52
