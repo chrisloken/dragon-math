@@ -1,0 +1,39 @@
+:root {
+  --sky-top: #1a3a5c;
+  --sky-mid: #3d7ea6;
+  --sky-low: #87c4d9;
+  --hill: #2f6b4f;
+  --ground: #3d5c2e;
+  --ground-dark: #2a4020;
+  --ink: #1a1a1a;
+  --paper: #fff8e7;
+  --accent: #e85d04;
+  --gem: #5eead4;
+  --gold: #f4c430;
+  --food: #c47a3a;
+  --shadow: rgba(10, 20, 30, 0.35);
+  --font-display: 'Lilita One', 'Trebuchet MS', sans-serif;
+  --font-body: 'Nunito', 'Trebuchet MS', sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--sky-mid);
+  -webkit-font-smoothing: antialiased;
+}
