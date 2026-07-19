@@ -634,8 +634,6 @@
   width: 72px;
   transform-origin: center bottom;
   transition: transform 0.4s ease;
-  --dragon-body: #3d9b6a;
-  --dragon-dark: #2f6b4f;
 }
 
 .pet-dragon-svg {
