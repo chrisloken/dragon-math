@@ -43,13 +43,14 @@ export function FactsGrid({ factCounts, onClose }: FactsGridProps) {
                       <div
                         key={factKey(a, b)}
                         role="gridcell"
-                        className={`facts-cell ${done ? 'facts-cell--done' : ''}`}
-                        title={`${a} × ${b} = ${a * b}${done ? ` · correct ${count}×` : ''}`}
-                        aria-label={`${a} times ${b}${done ? ', answered' : ', not yet'}`}
+                        className={`facts-cell ${done ? 'facts-cell--done' : ''} ${count >= 3 ? 'facts-cell--hot' : ''}`}
+                        title={`${a} × ${b} = ${a * b} · correct ${count}×`}
+                        aria-label={`${a} times ${b}, answered correctly ${count} times`}
                       >
                         <span className="facts-cell-fact">
                           {a}×{b}
                         </span>
+                        <span className="facts-cell-count">{count}</span>
                       </div>
                     )
                   })}

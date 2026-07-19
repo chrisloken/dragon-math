@@ -1,8 +1,18 @@
-import { FOOD_PER_LEVEL, TREASURE_TO_HATCH, tableColorClass, type Pet } from '../game'
+import { foodToNextLevel, TREASURE_TO_HATCH, tableColorClass, type Pet } from '../game'
 import { DragonPuppet } from './DragonPuppet'
 
 interface PetsRackProps {
   pets: Pet[]
+}
+
+/** Visual stage for the puppet (caps feature unlocks). */
+function coolnessForLevel(level: number): number {
+  return Math.min(8, Math.max(0, level))
+}
+
+/** Pet display scale — hatchling small, grows clearly each level. */
+function scaleForLevel(level: number): number {
+  return Math.min(0.7 + level * 0.18, 2.15)
 }
 
 export function PetsRack({ pets }: PetsRackProps) {
@@ -35,12 +45,12 @@ function PetCard({ pet }: { pet: Pet }) {
     )
   }
 
-  const scale = Math.min(0.55 + pet.level * 0.12, 1.4)
-  const cool = Math.min(pet.level, 5)
+  const cool = coolnessForLevel(pet.level)
+  const scale = scaleForLevel(pet.level)
   const colorClass = tableColorClass(pet.table)
 
   return (
-    <div className={`pet-card pet-card--hatched ${colorClass}`}>
+    <div className={`pet-card pet-card--hatched pet-card--lv${cool} ${colorClass}`}>
       <div
         className={`pet-dragon pet-dragon--lv${cool} ${colorClass}`}
         style={{ transform: `scale(${scale})` }}
@@ -52,7 +62,7 @@ function PetCard({ pet }: { pet: Pet }) {
         ×{pet.table} · Lv {pet.level}
       </p>
       <p className="pet-progress">
-        Food {pet.food}/{FOOD_PER_LEVEL}
+        Food {pet.food}/{foodToNextLevel(pet.level)}
       </p>
       <p className="pet-bonus">+{pet.level} loot</p>
     </div>

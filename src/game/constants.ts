@@ -37,8 +37,10 @@ export const MIN_SPAWN_INTERVAL_MS = 900
 export const Y_LANE_MIN = 8
 export const Y_LANE_MAX = 52
 
-/** Food needed on a hatched pet to gain one level. */
-export const FOOD_PER_LEVEL = 10
+/** Food needed to go from `level` → `level + 1`: 3 + current level. */
+export function foodToNextLevel(level: number): number {
+  return 3 + Math.max(0, level)
+}
 
 export const TABLE_FACTORS: TableFactor[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 

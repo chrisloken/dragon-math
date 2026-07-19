@@ -55,7 +55,7 @@ export interface Pet {
   treasure: number
   /** Level after hatching; each level adds +1 to rewards for that color. */
   level: number
-  /** Food toward the next level (0 … FOOD_PER_LEVEL-1). */
+  /** Food toward the next level (0 … foodToNextLevel(level)-1). */
   food: number
 }
 

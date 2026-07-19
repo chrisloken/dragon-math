@@ -1,4 +1,4 @@
-import { FOOD_PER_LEVEL, TREASURE_TO_HATCH, factKey } from './constants'
+import { TREASURE_TO_HATCH, factKey, foodToNextLevel } from './constants'
 import type { Dragon, FactCorrectCounts, Inventory, Pet, TableFactor } from './types'
 
 export function emptyInventory(): Inventory {
@@ -131,7 +131,7 @@ export function applyTreasureToEggs(pets: Pet[], treasureGained: number): Pet[] 
 
 /**
  * Distribute food across hatched dragons (always feed the hungriest first).
- * Every FOOD_PER_LEVEL food on a pet raises its level by 1.
+ * Food to level up is 3 + current level.
  */
 export function distributeFood(pets: Pet[], foodAmount: number): Pet[] {
   if (foodAmount <= 0) return pets
@@ -148,17 +148,21 @@ export function distributeFood(pets: Pet[], foodAmount: number): Pet[] {
     for (const i of hatchedIndices) {
       const a = next[i]!
       const b = next[best]!
-      const aKey = a.level * FOOD_PER_LEVEL + a.food
-      const bKey = b.level * FOOD_PER_LEVEL + b.food
-      if (aKey < bKey || (aKey === bKey && a.table < b.table)) {
+      // Hungriest: lowest level, then least food toward the next level
+      if (
+        a.level < b.level ||
+        (a.level === b.level && a.food < b.food) ||
+        (a.level === b.level && a.food === b.food && a.table < b.table)
+      ) {
         best = i
       }
     }
 
     const pet = next[best]!
+    const needed = foodToNextLevel(pet.level)
     let food = pet.food + 1
     let level = pet.level
-    if (food >= FOOD_PER_LEVEL) {
+    if (food >= needed) {
       food = 0
       level += 1
     }
