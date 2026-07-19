@@ -23,6 +23,7 @@ function App() {
     eggToast,
     showFactsGrid,
     setShowFactsGrid,
+    teleportFx,
     submitAnswer,
     onSummaryContinue,
     dismissEggToast,
@@ -31,7 +32,7 @@ function App() {
   const inputDisabled = endScreen !== null || showFactsGrid
 
   return (
-    <Playfield dragons={dragons}>
+    <Playfield dragons={dragons} teleportFx={teleportFx}>
       <header className="hud-top">
         <h1 className="brand">Dragon Math Facts</h1>
         <div className="hud-top-right">

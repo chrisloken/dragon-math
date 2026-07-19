@@ -36,6 +36,20 @@ export function useGame() {
   const [factCounts, setFactCounts] = useState<FactCorrectCounts>({})
   const [eggToast, setEggToast] = useState<TableFactor | null>(null)
   const [showFactsGrid, setShowFactsGrid] = useState(false)
+  const [teleportFx, setTeleportFx] = useState<
+    {
+      id: string
+      x: number
+      yLane: number
+      table: Dragon['table']
+      direction: Dragon['direction']
+      reward: Dragon['reward']
+      factA: number
+      factB: number
+      answer: number
+      speed: number
+    }[]
+  >([])
 
   const dragonsRef = useRef(dragons)
   const inventoryRef = useRef(inventory)
@@ -192,6 +206,18 @@ export function useGame() {
         answer,
         petsRef.current,
       )
+
+      if (result.collectedIds.length > 0) {
+        const hitSet = new Set(result.collectedIds)
+        const fx = dragonsRef.current
+          .filter((d) => hitSet.has(d.id))
+          .map((d) => ({ ...d }))
+        setTeleportFx((prev) => [...prev, ...fx])
+        window.setTimeout(() => {
+          setTeleportFx((prev) => prev.filter((f) => !hitSet.has(f.id)))
+        }, 480)
+      }
+
       setDragons(result.dragons)
       setInventory(result.inventory)
 
@@ -260,6 +286,7 @@ export function useGame() {
     setSpawnedCount(0)
     spawnedRef.current = 0
     setDragons([])
+    setTeleportFx([])
     setEndScreen(null)
     setBeatenRound(null)
     setPaused(false)
@@ -279,6 +306,7 @@ export function useGame() {
     eggToast,
     showFactsGrid,
     setShowFactsGrid,
+    teleportFx,
     submitAnswer,
     onSummaryContinue,
     dismissEggToast,
