@@ -5,6 +5,7 @@ import { PetsRack } from './components/PetsRack'
 import { Playfield } from './components/Playfield'
 import { RoundProgress } from './components/RoundProgress'
 import { RoundSummaryModal } from './components/RoundSummaryModal'
+import { StartScreen } from './components/StartScreen'
 import { TreasurePile } from './components/TreasurePile'
 import { useGame } from './hooks/useGame'
 import './styles/theme.css'
@@ -24,15 +25,18 @@ function App() {
     showFactsGrid,
     setShowFactsGrid,
     teleportFx,
+    gameStarted,
+    startGame,
     submitAnswer,
     onSummaryContinue,
     dismissEggToast,
   } = useGame()
 
-  const inputDisabled = endScreen !== null || showFactsGrid
+  const inputDisabled = !gameStarted || endScreen !== null || showFactsGrid
 
   return (
     <Playfield dragons={dragons} teleportFx={teleportFx}>
+      {!gameStarted && <StartScreen onStart={startGame} />}
       <header className="hud-top">
         <h1 className="brand">Dragon Math Facts</h1>
         <div className="hud-top-right">

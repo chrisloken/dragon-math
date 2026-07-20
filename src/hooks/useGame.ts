@@ -27,7 +27,8 @@ export function useGame() {
   const [round, setRound] = useState(1)
   const [dragons, setDragons] = useState<Dragon[]>([])
   const [inventory, setInventory] = useState<Inventory>(emptyInventory)
-  const [paused, setPaused] = useState(false)
+  const [paused, setPaused] = useState(true)
+  const [gameStarted, setGameStarted] = useState(false)
   const [spawnedCount, setSpawnedCount] = useState(0)
   const [roundStats, setRoundStats] = useState<RoundStats>(emptyRoundStats)
   const [endScreen, setEndScreen] = useState<EndScreen>(null)
@@ -294,6 +295,11 @@ export function useGame() {
 
   const dismissEggToast = useCallback(() => setEggToast(null), [])
 
+  const startGame = useCallback(() => {
+    setGameStarted(true)
+    setPaused(false)
+  }, [])
+
   return {
     round,
     dragons,
@@ -307,6 +313,8 @@ export function useGame() {
     showFactsGrid,
     setShowFactsGrid,
     teleportFx,
+    gameStarted,
+    startGame,
     submitAnswer,
     onSummaryContinue,
     dismissEggToast,
