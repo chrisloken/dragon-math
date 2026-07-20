@@ -37,30 +37,34 @@ function App() {
   return (
     <Playfield dragons={dragons} teleportFx={teleportFx}>
       {!gameStarted && <StartScreen onStart={startGame} />}
-      <header className="hud-top">
-        <h1 className="brand">Dragon Math Facts</h1>
-        <div className="hud-top-right">
-          <button
-            type="button"
-            className="facts-button"
-            onClick={() => setShowFactsGrid(true)}
-          >
-            Facts
-          </button>
-          <p className="round-badge">Round {round}</p>
-        </div>
-      </header>
+      {gameStarted && (
+        <>
+          <header className="hud-top">
+            <h1 className="brand">Dragon Math Facts</h1>
+            <div className="hud-top-right">
+              <button
+                type="button"
+                className="facts-button"
+                onClick={() => setShowFactsGrid(true)}
+              >
+                Facts
+              </button>
+              <p className="round-badge">Round {round}</p>
+            </div>
+          </header>
 
-      <PetsRack pets={pets} />
+          <PetsRack pets={pets} />
 
-      <TreasurePile gems={inventory.gems} gold={inventory.gold} />
+          <TreasurePile gems={inventory.gems} gold={inventory.gold} />
 
-      <div className="hud-bottom">
-        <div className="answer-zone">
-          <AnswerInput onSubmit={submitAnswer} disabled={inputDisabled} />
-        </div>
-        <RoundProgress spawned={spawnedCount} total={dragonsPerRound} />
-      </div>
+          <div className="hud-bottom">
+            <div className="answer-zone">
+              <AnswerInput onSubmit={submitAnswer} disabled={inputDisabled} />
+            </div>
+            <RoundProgress spawned={spawnedCount} total={dragonsPerRound} />
+          </div>
+        </>
+      )}
 
       {eggToast !== null && (
         <EggToast table={eggToast} onDismiss={dismissEggToast} />
