@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
-import type { Dragon } from '../game'
+import type { Dragon, GameMode } from '../game'
 import { DragonSprite } from './DragonSprite'
+import { RainWeather } from './RainWeather'
 
 export interface TeleportFx {
   id: string
@@ -18,23 +19,33 @@ export interface TeleportFx {
 interface PlayfieldProps {
   dragons: Dragon[]
   teleportFx?: TeleportFx[]
+  raining?: boolean
+  mode?: GameMode
   children?: ReactNode
 }
 
-export function Playfield({ dragons, teleportFx = [], children }: PlayfieldProps) {
+export function Playfield({
+  dragons,
+  teleportFx = [],
+  raining = false,
+  mode = 'multiplication',
+  children,
+}: PlayfieldProps) {
   return (
-    <div className="playfield">
+    <div className={`playfield${raining ? ' is-raining' : ''}`}>
       <div className="sky" aria-hidden="true" />
       <div className="hills" aria-hidden="true" />
       <div className="ground" aria-hidden="true" />
+      {raining && <RainWeather />}
       <div className="dragon-layer">
         {dragons.map((d) => (
-          <DragonSprite key={d.id} dragon={d} />
+          <DragonSprite key={d.id} dragon={d} mode={mode} />
         ))}
         {teleportFx.map((fx) => (
           <DragonSprite
             key={`fx-${fx.id}`}
             dragon={fx}
+            mode={mode}
             teleporting
           />
         ))}

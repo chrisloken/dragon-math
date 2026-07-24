@@ -2,8 +2,15 @@ export type Reward = 'gem' | 'gold' | 'food'
 
 export type Direction = 'ltr' | 'rtl'
 
-/** Times-table factor 1–10; each has its own egg color and dragon color. */
-export type TableFactor = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
+/** Which arithmetic the current run practices. */
+export type GameMode = 'addition' | 'subtraction' | 'multiplication'
+
+/**
+ * Family id for eggs / pets / crystals.
+ * Multiplication: 1–10. Addition & subtraction: 1–15.
+ * Dragon colors cycle through 10 CSS classes.
+ */
+export type TableFactor = number
 
 export interface Dragon {
   id: string
@@ -26,6 +33,8 @@ export interface Inventory {
   gems: number
   gold: number
   food: number
+  /** Times-table colors whose special crystal gem has been earned. */
+  specialGems: TableFactor[]
 }
 
 export interface RoundConfig {
@@ -59,9 +68,32 @@ export interface Pet {
   food: number
 }
 
-/** correctCounts["a×b"] = times answered correctly */
+/** correctCounts["a×b" | "a+b" | "a−b"] = times answered correctly */
 export type FactCorrectCounts = Record<string, number>
 
-export type EndScreen = { kind: 'summary'; round: number; stats: RoundStats } | null
+export type EndScreen =
+  | { kind: 'summary'; round: number; stats: RoundStats }
+  | { kind: 'crystal-select'; options: TableFactor[] }
+  | { kind: 'crystal'; table: TableFactor }
+  | { kind: 'victory' }
+  | null
 
 export type EggAward = { table: TableFactor } | null
+
+/** Shard status during the crystal gem stage. */
+export type CrystalShardStatus = 'incoming' | 'melding' | 'melded' | 'missed'
+
+/**
+ * One of the 10 table facts as a crystal shard converging on center.
+ * `corner` is a spawn slot 0–9 around the screen edge.
+ * `progress` goes 0 → 1 toward the center while status is `incoming`.
+ */
+export interface CrystalShard {
+  id: string
+  a: number
+  b: number
+  answer: number
+  corner: number
+  progress: number
+  status: CrystalShardStatus
+}

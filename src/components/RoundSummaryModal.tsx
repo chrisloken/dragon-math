@@ -38,7 +38,7 @@ export function RoundSummaryModal({ round, stats, onContinue }: RoundSummaryModa
           </li>
         </ul>
         <button type="button" className="modal-button" onClick={onContinue} autoFocus>
-          Start Round {round + 1}
+          Continue
         </button>
       </div>
     </div>

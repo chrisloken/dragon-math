@@ -1,4 +1,4 @@
-import { useEffect, useRef, type FormEvent, type KeyboardEvent } from 'react'
+import { useEffect, useRef, type FocusEvent, type FormEvent, type KeyboardEvent } from 'react'
 
 interface AnswerInputProps {
   onSubmit: (value: string) => void
@@ -27,6 +27,24 @@ export function AnswerInput({ onSubmit, disabled }: AnswerInputProps) {
     e.currentTarget.value = e.currentTarget.value.replace(/\D/g, '')
   }
 
+  const handleBlur = (e: FocusEvent<HTMLInputElement>) => {
+    if (disabled) return
+    const next = e.relatedTarget
+    // Let HUD controls (Rain, Facts, etc.) receive clicks without focus stealing.
+    if (next instanceof HTMLElement && next.closest('button, a, [tabindex]')) {
+      return
+    }
+    // Defer so a mousedown on Rain/Facts can complete before we reclaim focus.
+    window.setTimeout(() => {
+      if (disabled) return
+      const active = document.activeElement
+      if (active instanceof HTMLElement && active.closest('button, a, [tabindex]')) {
+        return
+      }
+      ref.current?.focus()
+    }, 0)
+  }
+
   return (
     <div className="answer-input-wrap">
       <label className="answer-label" htmlFor="answer">
@@ -43,9 +61,7 @@ export function AnswerInput({ onSubmit, disabled }: AnswerInputProps) {
         disabled={disabled}
         onKeyDown={handleKeyDown}
         onInput={handleInput}
-        onBlur={() => {
-          if (!disabled) ref.current?.focus()
-        }}
+        onBlur={handleBlur}
         aria-label="Enter the multiplication answer"
       />
     </div>

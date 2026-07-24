@@ -1,66 +1,92 @@
-import type { CSSProperties } from 'react'
+import { tableColorClass, type TableFactor } from '../game'
 
-interface TreasurePileProps {
-  gems: number
-  gold: number
+export interface PilePiece {
+  id: string
+  kind: 'gem' | 'gold'
+  /** Position inside the pile, percent (left / bottom). Frozen at spawn. */
+  left: number
+  bottom: number
+  rotate: number
 }
 
-/** Deterministic jitter so pieces don't reshuffle on every render. */
+interface TreasurePileProps {
+  pieces: PilePiece[]
+  specialGems?: TableFactor[]
+  celebrating?: boolean
+}
+
+/** Deterministic jitter for special-gem placement only. */
 function jitter(seed: number): number {
   const x = Math.sin(seed * 12.9898) * 43758.5453
   return x - Math.floor(x)
 }
 
-export function TreasurePile({ gems, gold }: TreasurePileProps) {
-  const items: { key: string; kind: 'gem' | 'gold'; seed: number }[] = []
-  for (let i = 0; i < gems; i++) items.push({ key: `gem-${i}`, kind: 'gem', seed: i * 2 + 1 })
-  for (let i = 0; i < gold; i++) items.push({ key: `gold-${i}`, kind: 'gold', seed: i * 2 + 2 })
-
-  const total = items.length
+export function TreasurePile({
+  pieces = [],
+  specialGems = [],
+  celebrating = false,
+}: TreasurePileProps) {
+  const total = pieces.length + specialGems.length * 8
+  const moundHeight = Math.min(1, 0.25 + total / 100)
   const maxVisible = 280
-  const visible = items.slice(-maxVisible)
-
-  const moundHeight = Math.min(1, 0.2 + total / 90)
-  const pieceScale = Math.min(1.35, 0.85 + total / 200)
+  const visible = pieces.length > maxVisible ? pieces.slice(-maxVisible) : pieces
 
   return (
     <div
-      className="treasure-pile"
+      className={`treasure-pile${celebrating ? ' treasure-pile--victory' : ''}`}
       aria-live="polite"
-      style={
-        {
-          ['--treasure-mound' as string]: String(moundHeight),
-          ['--treasure-scale' as string]: String(pieceScale),
-        } as CSSProperties
-      }
     >
+      {celebrating && (
+        <div className="treasure-victory-fx" aria-hidden="true">
+          <span className="treasure-victory-halo treasure-victory-halo--1" />
+          <span className="treasure-victory-halo treasure-victory-halo--2" />
+          <span className="treasure-victory-halo treasure-victory-halo--3" />
+          {Array.from({ length: 12 }, (_, i) => (
+            <span
+              key={i}
+              className="treasure-victory-ray"
+              style={{ ['--ray-i' as string]: String(i) }}
+            />
+          ))}
+        </div>
+      )}
       <div className="treasure-stack">
-        {visible.map((item, index) => {
-          const j = jitter(item.seed)
-          const j2 = jitter(item.seed + 17)
-          const x = (index / Math.max(1, visible.length - 1)) * 100
-          const centerBias = 1 - Math.abs(x - 50) / 50
-          const row = Math.floor(index / Math.max(12, Math.ceil(visible.length / 8)))
-          const bottomPct =
-            (row * 7 + j * 6) * moundHeight * centerBias * 0.85 + j2 * 4 * moundHeight
+        {visible.map((item) => (
+          <span
+            key={item.id}
+            className={`treasure-piece ${item.kind}`}
+            style={{
+              left: `${item.left}%`,
+              bottom: `${item.bottom}%`,
+              transform: `rotate(${item.rotate}deg)`,
+            }}
+            aria-hidden="true"
+          />
+        ))}
 
+        {specialGems.map((table, i) => {
+          const j = jitter(table * 97 + i * 13)
+          const j2 = jitter(table * 53 + i * 19)
+          const n = Math.max(1, specialGems.length)
+          // Nest crystals into the mound: low, centered, slight fan.
+          const spread =
+            n === 1 ? 50 + (j - 0.5) * 8 : 32 + (i / (n - 1)) * 36 + (j - 0.5) * 5
+          const bottom = 8 + j2 * 10 + Math.min(18, moundHeight * 14)
           return (
             <span
-              key={item.key}
-              className={`treasure-piece ${item.kind}`}
+              key={`special-${table}`}
+              className={`treasure-piece treasure-special ${tableColorClass(table)}`}
               style={{
-                left: `${Math.min(98, Math.max(1, x + (j - 0.5) * 4))}%`,
-                bottom: `${Math.min(92, bottomPct)}%`,
-                transform: `scale(${pieceScale}) rotate(${(j - 0.5) * 40}deg)`,
+                left: `${Math.min(88, Math.max(12, spread))}%`,
+                bottom: `${Math.min(42, bottom)}%`,
+                transform: `rotate(${(j - 0.5) * 22}deg)`,
               }}
-              aria-hidden="true"
+              title={`×${table} crystal`}
+              aria-label={`×${table} crystal gem`}
             />
           )
         })}
       </div>
-      <p className="treasure-count">
-        {gems} gems · {gold} gold
-      </p>
     </div>
   )
 }

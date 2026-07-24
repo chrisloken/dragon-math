@@ -1,8 +1,15 @@
-import { TREASURE_TO_HATCH, factKey, foodToNextLevel } from './constants'
-import type { Dragon, FactCorrectCounts, Inventory, Pet, TableFactor } from './types'
+import { TREASURE_TO_HATCH, factKey, foodToNextLevel, PET_MAX_LEVEL } from './constants'
+import type {
+  Dragon,
+  FactCorrectCounts,
+  GameMode,
+  Inventory,
+  Pet,
+  TableFactor,
+} from './types'
 
 export function emptyInventory(): Inventory {
-  return { gems: 0, gold: 0, food: 0 }
+  return { gems: 0, gold: 0, food: 0, specialGems: [] }
 }
 
 export interface MatchResult {
@@ -18,13 +25,15 @@ export interface MatchResult {
   factKeys: string[]
 }
 
-function rewardAmount(table: TableFactor, pets: Pet[]): number {
+/** Gems/gold/food awarded per collected dragon (1 + hatched pet level). */
+export function rewardAmount(table: TableFactor, pets: Pet[]): number {
   const pet = pets.find((p) => p.table === table && p.hatched)
   if (!pet) return 1
   return 1 + pet.level
 }
 
 export function matchAnswer(
+  mode: GameMode,
   dragons: Dragon[],
   inventory: Inventory,
   answer: number,
@@ -48,7 +57,7 @@ export function matchAnswer(
   const factKeys: string[] = []
 
   for (const d of hits) {
-    factKeys.push(factKey(d.factA, d.factB))
+    factKeys.push(factKey(mode, d.factA, d.factB))
     const amount = rewardAmount(d.table, pets)
 
     if (d.reward === 'gem') {
@@ -95,14 +104,15 @@ export function bumpFactCounts(
   return next
 }
 
-/** A×B and B×A are the same fact for mastery / practice tracking. */
+/** Commutative pairs: A×B↔B×A and A+B↔B+A. Subtraction is ordered. */
 function commutativeFactKeys(key: string): string[] {
-  const match = /^(\d+)×(\d+)$/.exec(key)
+  const match = /^(\d+)([×+−])(\d+)$/.exec(key)
   if (!match) return [key]
   const a = Number(match[1])
-  const b = Number(match[2])
-  if (a === b) return [factKey(a, b)]
-  return [factKey(a, b), factKey(b, a)]
+  const op = match[2]!
+  const b = Number(match[3])
+  if (op === '−' || a === b) return [key]
+  return [`${a}${op}${b}`, `${b}${op}${a}`]
 }
 
 /** Apply treasure to unhatched eggs in award order (FIFO). */
@@ -131,12 +141,12 @@ export function applyTreasureToEggs(pets: Pet[], treasureGained: number): Pet[] 
 
 /**
  * Distribute food across hatched dragons (always feed the hungriest first).
- * Food to level up is 3 + current level.
+ * Food to level up is 3 + current level. Pets at PET_MAX_LEVEL are skipped.
  */
 export function distributeFood(pets: Pet[], foodAmount: number): Pet[] {
   if (foodAmount <= 0) return pets
   const hatchedIndices = pets
-    .map((p, i) => (p.hatched ? i : -1))
+    .map((p, i) => (p.hatched && p.level < PET_MAX_LEVEL ? i : -1))
     .filter((i) => i >= 0)
   if (hatchedIndices.length === 0) return pets
 
@@ -159,14 +169,24 @@ export function distributeFood(pets: Pet[], foodAmount: number): Pet[] {
     }
 
     const pet = next[best]!
+    if (pet.level >= PET_MAX_LEVEL) {
+      remaining -= 1
+      continue
+    }
     const needed = foodToNextLevel(pet.level)
     let food = pet.food + 1
     let level = pet.level
     if (food >= needed) {
       food = 0
-      level += 1
+      level = Math.min(PET_MAX_LEVEL, level + 1)
     }
     next[best] = { ...pet, food, level }
+    // Drop maxed pets from the hungry pool
+    if (level >= PET_MAX_LEVEL) {
+      const idx = hatchedIndices.indexOf(best)
+      if (idx >= 0) hatchedIndices.splice(idx, 1)
+      if (hatchedIndices.length === 0) break
+    }
     remaining -= 1
   }
 

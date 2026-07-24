@@ -1,8 +1,8 @@
-import { tableColorClass } from '../game'
+import { GAME_MODES, modeLabel, tableColorClass, type GameMode } from '../game'
 import { DragonPuppet } from './DragonPuppet'
 
 interface StartScreenProps {
-  onStart: () => void
+  onStart: (mode: GameMode) => void
 }
 
 /** Decorative dragons that cruise across the title screen. */
@@ -41,9 +41,19 @@ export function StartScreen({ onStart }: StartScreenProps) {
           Dragon Math
         </h1>
         <p className="start-screen-byline">Made by Miles and Chris Loken</p>
-        <button type="button" className="start-screen-play modal-button" onClick={onStart}>
-          Play
-        </button>
+        <p className="start-screen-mode-lead">Choose a practice mode</p>
+        <div className="start-screen-modes">
+          {GAME_MODES.map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              className={`start-screen-mode modal-button start-screen-mode--${mode}`}
+              onClick={() => onStart(mode)}
+            >
+              {modeLabel(mode)}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )

@@ -1,10 +1,11 @@
 import type { CSSProperties } from 'react'
-import type { Dragon, Reward } from '../game'
-import { tableColorClass } from '../game'
+import type { Dragon, GameMode, Reward } from '../game'
+import { formatFact, tableColorClass } from '../game'
 import { DragonPuppet } from './DragonPuppet'
 
 interface DragonSpriteProps {
   dragon: Dragon
+  mode?: GameMode
   teleporting?: boolean
 }
 
@@ -36,7 +37,11 @@ function RewardIcon({ reward }: { reward: Reward }) {
   )
 }
 
-export function DragonSprite({ dragon, teleporting = false }: DragonSpriteProps) {
+export function DragonSprite({
+  dragon,
+  mode = 'multiplication',
+  teleporting = false,
+}: DragonSpriteProps) {
   const flip = dragon.direction === 'rtl'
   const style: CSSProperties = {
     left: `${dragon.x}%`,
@@ -64,7 +69,7 @@ export function DragonSprite({ dragon, teleporting = false }: DragonSpriteProps)
       {!teleporting && (
         <div className="dragon-label" style={{ transform: `scaleX(${flip ? -1 : 1})` }}>
           <span className="dragon-fact">
-            {dragon.factA} × {dragon.factB}
+            {formatFact(mode, dragon.factA, dragon.factB)}
           </span>
           <RewardIcon reward={dragon.reward} />
         </div>

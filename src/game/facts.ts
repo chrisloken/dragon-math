@@ -2,13 +2,14 @@ import {
   EGG_NEAR_COMPLETE_BOOST,
   EGG_NEAR_COMPLETE_REMAINING,
   FACT_FREQUENCY_THRESHOLD,
-  FACT_MAX,
   FACT_MIN,
   FACT_REDUCED_WEIGHT,
   factKey,
-  TABLE_FACTORS,
+  familiesForMode,
+  modeSymbol,
+  operandMax,
 } from './constants'
-import type { FactCorrectCounts, Reward, TableFactor } from './types'
+import type { FactCorrectCounts, GameMode, Reward, TableFactor } from './types'
 
 export function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min
@@ -25,26 +26,56 @@ export function pickReward(allowFood: boolean): Reward {
   return 'gold'
 }
 
-/** Second factors still needed to finish table N (N×b not yet correct). */
-function remainingSeconds(
-  table: number,
-  correctCounts: FactCorrectCounts,
-): number[] {
-  const needed: number[] = []
-  for (let b = FACT_MIN; b <= FACT_MAX; b++) {
-    if ((correctCounts[factKey(table, b)] ?? 0) < 1) needed.push(b)
-  }
-  return needed
+export function computeAnswer(mode: GameMode, a: number, b: number): number {
+  if (mode === 'addition') return a + b
+  if (mode === 'subtraction') return a - b
+  return a * b
 }
 
-/** Boost when this fact is one of the last 1–2 needed for either factor's egg. */
+/**
+ * All practice facts that belong to family N for this mode.
+ * Mul: N×1…N×10. Add: N+1…N+15. Sub: N−1…N−N (N−b for b=1…N).
+ */
+export function familyFacts(
+  mode: GameMode,
+  family: TableFactor,
+): { a: number; b: number }[] {
+  const max = operandMax(mode)
+  if (mode === 'subtraction') {
+    const facts: { a: number; b: number }[] = []
+    for (let b = FACT_MIN; b <= Math.min(family, max); b++) {
+      facts.push({ a: family, b })
+    }
+    return facts
+  }
+  return Array.from({ length: max }, (_, i) => ({ a: family, b: i + 1 }))
+}
+
+/** @deprecated Prefer familyFacts(mode, table). */
+export function tableFacts(table: TableFactor): { a: number; b: number }[] {
+  return familyFacts('multiplication', table)
+}
+
+/** Second partners still needed to finish family N. */
+function remainingPartners(
+  mode: GameMode,
+  family: number,
+  correctCounts: FactCorrectCounts,
+): number[] {
+  return familyFacts(mode, family)
+    .filter(({ a, b }) => (correctCounts[factKey(mode, a, b)] ?? 0) < 1)
+    .map(({ b }) => b)
+}
+
+/** Boost when this fact is one of the last 1–2 needed for either family's egg. */
 function nearEggBoost(
+  mode: GameMode,
   factA: number,
   factB: number,
   correctCounts: FactCorrectCounts,
 ): number {
   let boost = 1
-  const remA = remainingSeconds(factA, correctCounts)
+  const remA = remainingPartners(mode, factA, correctCounts)
   if (
     remA.length > 0 &&
     remA.length <= EGG_NEAR_COMPLETE_REMAINING &&
@@ -52,8 +83,8 @@ function nearEggBoost(
   ) {
     boost *= EGG_NEAR_COMPLETE_BOOST
   }
-  if (factA !== factB) {
-    const remB = remainingSeconds(factB, correctCounts)
+  if (mode !== 'subtraction' && factA !== factB) {
+    const remB = remainingPartners(mode, factB, correctCounts)
     if (
       remB.length > 0 &&
       remB.length <= EGG_NEAR_COMPLETE_REMAINING &&
@@ -65,14 +96,33 @@ function nearEggBoost(
   return boost
 }
 
+function pushFact(
+  pool: { factA: number; factB: number; weight: number }[],
+  mode: GameMode,
+  a: number,
+  b: number,
+  correctCounts: FactCorrectCounts,
+  max: number,
+) {
+  const count = correctCounts[factKey(mode, a, b)] ?? 0
+  const tableWeight = 1 + (max + 1 - a) * 0.08
+  const otherBias = (max + 1 - b) * (max + 1 - b)
+  const practiced = count >= FACT_FREQUENCY_THRESHOLD ? FACT_REDUCED_WEIGHT : 1
+  const familiarity = 1 / (1 + count)
+  const eggBoost = nearEggBoost(mode, a, b, correctCounts)
+  pool.push({
+    factA: a,
+    factB: b,
+    weight: tableWeight * otherBias * practiced * familiarity * eggBoost,
+  })
+}
+
 /**
- * Weighted fact pick.
- * Table color (factA) is nearly even so all 10 dragon colors appear.
- * The other factor keeps a strong low-number bias that fades with practice.
- * Facts that finish an almost-complete egg (1–2 left) are strongly boosted.
- * After an egg is awarded, that table’s facts are hidden until all eggs unlock.
+ * Weighted fact pick for the active mode.
+ * Family color (factA) stays fairly even; partner keeps a low-number bias.
  */
 export function randomFact(
+  mode: GameMode,
   correctCounts: FactCorrectCounts = {},
   awardedTables: ReadonlySet<TableFactor> = new Set(),
 ): {
@@ -80,34 +130,25 @@ export function randomFact(
   factB: number
   answer: number
 } {
-  const eggsComplete = awardedTables.size >= TABLE_FACTORS.length
+  const max = operandMax(mode)
+  const eggsComplete = awardedTables.size >= familiesForMode(mode).length
   const pool: { factA: number; factB: number; weight: number }[] = []
-  for (let a = FACT_MIN; a <= FACT_MAX; a++) {
-    for (let b = FACT_MIN; b <= FACT_MAX; b++) {
-      // Hide awarded-table facts (N×…) until every egg is unlocked
-      if (!eggsComplete && awardedTables.has(a as TableFactor)) {
-        continue
+
+  for (let a = FACT_MIN; a <= max; a++) {
+    if (!eggsComplete && awardedTables.has(a)) continue
+    if (mode === 'subtraction') {
+      for (let b = FACT_MIN; b <= a; b++) {
+        pushFact(pool, mode, a, b, correctCounts, max)
       }
-      const count = correctCounts[factKey(a, b)] ?? 0
-      // Mild table preference only — keeps all colors visible
-      const tableWeight = 1 + (11 - a) * 0.08
-      // Strong low bias on the second factor
-      const otherBias = (11 - b) * (11 - b)
-      const practiced =
-        count >= FACT_FREQUENCY_THRESHOLD ? FACT_REDUCED_WEIGHT : 1
-      const familiarity = 1 / (1 + count)
-      const eggBoost = nearEggBoost(a, b, correctCounts)
-      pool.push({
-        factA: a,
-        factB: b,
-        weight: tableWeight * otherBias * practiced * familiarity * eggBoost,
-      })
+    } else {
+      for (let b = FACT_MIN; b <= max; b++) {
+        pushFact(pool, mode, a, b, correctCounts, max)
+      }
     }
   }
 
-  // Safety: if the pool is empty, fall back to any fact
   if (pool.length === 0) {
-    return { factA: 1, factB: 1, answer: 1 }
+    return { factA: 1, factB: 1, answer: computeAnswer(mode, 1, 1) }
   }
 
   const total = pool.reduce((sum, item) => sum + item.weight, 0)
@@ -115,36 +156,47 @@ export function randomFact(
   for (const item of pool) {
     roll -= item.weight
     if (roll <= 0) {
-      return { factA: item.factA, factB: item.factB, answer: item.factA * item.factB }
+      return {
+        factA: item.factA,
+        factB: item.factB,
+        answer: computeAnswer(mode, item.factA, item.factB),
+      }
     }
   }
   const last = pool[pool.length - 1]!
-  return { factA: last.factA, factB: last.factB, answer: last.factA * last.factB }
+  return {
+    factA: last.factA,
+    factB: last.factB,
+    answer: computeAnswer(mode, last.factA, last.factB),
+  }
 }
 
-export function asTableFactor(n: number): TableFactor {
-  const clamped = Math.min(10, Math.max(1, Math.round(n))) as TableFactor
-  return clamped
-}
-
-/** All 10 facts for table N are N×1 … N×10. */
-export function tableFacts(table: TableFactor): { a: number; b: number }[] {
-  return Array.from({ length: 10 }, (_, i) => ({ a: table, b: i + 1 }))
+export function asTableFactor(n: number, mode: GameMode = 'multiplication'): TableFactor {
+  const max = operandMax(mode)
+  return Math.min(max, Math.max(1, Math.round(n)))
 }
 
 export function isTableMastered(
+  mode: GameMode,
   table: TableFactor,
   correctCounts: FactCorrectCounts,
 ): boolean {
-  return tableFacts(table).every(({ a, b }) => (correctCounts[factKey(a, b)] ?? 0) >= 1)
+  return familyFacts(mode, table).every(
+    ({ a, b }) => (correctCounts[factKey(mode, a, b)] ?? 0) >= 1,
+  )
 }
 
-/** Newly mastered tables that do not yet have an egg. */
+/** Newly mastered families that do not yet have an egg. */
 export function findNewEggAwards(
+  mode: GameMode,
   correctCounts: FactCorrectCounts,
   ownedTables: Set<TableFactor>,
 ): TableFactor[] {
-  return TABLE_FACTORS.filter(
-    (t) => !ownedTables.has(t) && isTableMastered(t, correctCounts),
+  return familiesForMode(mode).filter(
+    (t) => !ownedTables.has(t) && isTableMastered(mode, t, correctCounts),
   )
+}
+
+export function formatFact(mode: GameMode, a: number, b: number): string {
+  return `${a}${modeSymbol(mode)}${b}`
 }

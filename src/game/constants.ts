@@ -1,4 +1,4 @@
-import type { RoundConfig, RoundStats, TableFactor } from './types'
+import type { GameMode, RoundConfig, RoundStats, TableFactor } from './types'
 
 /** Total flying dragons that appear in each round. */
 export const DRAGONS_PER_ROUND_QUOTA = 30
@@ -16,7 +16,14 @@ export const EGG_NEAR_COMPLETE_REMAINING = 2
 export const EGG_NEAR_COMPLETE_BOOST = 14
 
 export const FACT_MIN = 1
+/** Multiplication operand / family max (legacy default). */
 export const FACT_MAX = 10
+/** Addition & subtraction operand / family max. */
+export const ADD_SUB_FACT_MAX = 15
+/** How many CSS color classes cycle for families. */
+export const COLOR_FAMILY_COUNT = 10
+
+export const GAME_MODES: GameMode[] = ['addition', 'subtraction', 'multiplication']
 
 /** Concurrent dragons on screen (round 1). */
 export const BASE_MAX_DRAGONS = 3
@@ -42,10 +49,64 @@ export function foodToNextLevel(level: number): number {
   return 3 + Math.max(0, level)
 }
 
+/** Gem cost and food yield for the rain spell. */
+export const RAIN_GEM_COST = 20
+export const RAIN_FOOD_AMOUNT = 8
+/** Total rain VFX duration before food is applied and FX clears. */
+export const RAIN_DURATION_MS = 2800
+/** Delay before food is delivered (after clouds + rain channel). */
+export const RAIN_FOOD_DELAY_MS = 1800
+
+/** Pet must reach this level to unlock crystal challenges between rounds. */
+export const CRYSTAL_MIN_LEVEL = 3
+/** How long each shard takes to travel from the edge to the center. */
+export const CRYSTAL_SHARD_DURATION_MS = 20700
+/** Brief pause after a failed crystal stage before leaving. */
+export const CRYSTAL_RESULT_PAUSE_MS = 1600
+/** How long the rain-like meld channel VFX plays on a correct answer. */
+export const CRYSTAL_MELD_VFX_MS = 900
+/** Celebrate burst before the completed gem starts falling. */
+export const CRYSTAL_WIN_BURST_MS = 850
+/** Duration of the gem falling into the treasure pile. */
+export const CRYSTAL_WIN_FALL_MS = 1100
+/** How long loot pieces take to fall from a dragon into the treasure pile. */
+export const LOOT_FALL_MS = 780
+/** Cap how many flying pieces we spawn per dragon (amount may be higher). */
+export const LOOT_FALL_MAX_PIECES = 6
+/** Pet level at which they leave the rack and join the victory orbit. */
+export const PET_MAX_LEVEL = 10
+
+/** Multiplication families (legacy export name). */
 export const TABLE_FACTORS: TableFactor[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-export function allEggsUnlocked(awardedCount: number): boolean {
-  return awardedCount >= TABLE_FACTORS.length
+export function operandMax(mode: GameMode): number {
+  return mode === 'multiplication' ? FACT_MAX : ADD_SUB_FACT_MAX
+}
+
+export function familiesForMode(mode: GameMode): TableFactor[] {
+  const max = operandMax(mode)
+  return Array.from({ length: max }, (_, i) => i + 1)
+}
+
+export function allEggsUnlocked(awardedCount: number, mode: GameMode = 'multiplication'): boolean {
+  return awardedCount >= familiesForMode(mode).length
+}
+
+export function modeSymbol(mode: GameMode): string {
+  if (mode === 'addition') return '+'
+  if (mode === 'subtraction') return '−'
+  return '×'
+}
+
+export function modeLabel(mode: GameMode): string {
+  if (mode === 'addition') return 'Addition'
+  if (mode === 'subtraction') return 'Subtraction'
+  return 'Multiplication'
+}
+
+/** Map any family id onto one of the 10 dragon color classes. */
+export function colorFamily(family: number): number {
+  return ((Math.max(1, family) - 1) % COLOR_FAMILY_COUNT) + 1
 }
 
 export function getRoundConfig(
@@ -70,6 +131,6 @@ export function emptyRoundStats(): RoundStats {
   return { correct: 0, incorrect: 0, gems: 0, gold: 0, food: 0 }
 }
 
-export function factKey(a: number, b: number): string {
-  return `${a}×${b}`
+export function factKey(mode: GameMode, a: number, b: number): string {
+  return `${a}${modeSymbol(mode)}${b}`
 }
