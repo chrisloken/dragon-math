@@ -573,7 +573,8 @@
   border-radius: 999px;
 }
 
-.facts-button {
+.facts-button,
+.pause-button {
   font-family: var(--font-display);
   font-size: 0.95rem;
   padding: 0.35rem 0.85rem;
@@ -584,8 +585,16 @@
   cursor: pointer;
 }
 
-.facts-button:hover {
+.facts-button:hover,
+.pause-button:hover {
   background: rgba(13, 39, 64, 0.75);
+}
+
+.pause-overlay {
+  z-index: 30;
+  background: rgba(8, 20, 36, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .brand {

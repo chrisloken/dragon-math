@@ -48,6 +48,7 @@ export function useGame() {
   const [dragons, setDragons] = useState<Dragon[]>([])
   const [inventory, setInventory] = useState<Inventory>(emptyInventory)
   const [paused, setPaused] = useState(true)
+  const [userPaused, setUserPaused] = useState(false)
   const [gameStarted, setGameStarted] = useState(false)
   const [spawnedCount, setSpawnedCount] = useState(0)
   const [roundStats, setRoundStats] = useState<RoundStats>(emptyRoundStats)
@@ -142,8 +143,8 @@ export function useGame() {
     modeRef.current = mode
   }, [mode])
   useEffect(() => {
-    pausedRef.current = paused
-  }, [paused])
+    pausedRef.current = paused || userPaused
+  }, [paused, userPaused])
   useEffect(() => {
     roundRef.current = round
   }, [round])
@@ -348,7 +349,7 @@ export function useGame() {
 
   // Spawning — count outside setState updaters (StrictMode-safe)
   useEffect(() => {
-    if (paused) return
+    if (paused || userPaused) return
 
     const eggsUnlocked = allEggsUnlocked(petsRef.current.length, modeRef.current)
     const awardedTables = new Set(petsRef.current.map((p) => p.table))
@@ -402,7 +403,7 @@ export function useGame() {
       cancelled = true
       clearInterval(spawnId)
     }
-  }, [round, paused, mode])
+  }, [round, paused, userPaused, mode])
 
   const submitAnswer = useCallback(
     (raw: string) => {
@@ -695,6 +696,15 @@ export function useGame() {
 
   const dismissEggToast = useCallback(() => setEggToast(null), [])
 
+  const pauseGame = useCallback(() => {
+    if (!gameStarted) return
+    setUserPaused(true)
+  }, [gameStarted])
+
+  const resumeGame = useCallback(() => {
+    setUserPaused(false)
+  }, [])
+
   const startGame = useCallback((nextMode: GameMode) => {
     setMode(nextMode)
     modeRef.current = nextMode
@@ -723,6 +733,7 @@ export function useGame() {
     setCrystalOutcome(null)
     crystalOutcomeRef.current = null
     crystalTableRef.current = null
+    setUserPaused(false)
     setGameStarted(true)
     setPaused(false)
   }, [])
@@ -788,6 +799,9 @@ export function useGame() {
     crystalShards,
     crystalOutcome,
     gameStarted,
+    userPaused,
+    pauseGame,
+    resumeGame,
     startGame,
     castRain,
     submitAnswer,

@@ -6,6 +6,7 @@ import { FactsGrid } from './components/FactsGrid'
 import { InventoryBadge } from './components/InventoryBadge'
 import { LootFall } from './components/LootFall'
 import { OrbitingPets } from './components/OrbitingPets'
+import { PauseOverlay } from './components/PauseOverlay'
 import { PetsRack } from './components/PetsRack'
 import { Playfield } from './components/Playfield'
 import { RainButton } from './components/RainButton'
@@ -40,6 +41,9 @@ function App() {
     crystalShards,
     crystalOutcome,
     gameStarted,
+    userPaused,
+    pauseGame,
+    resumeGame,
     startGame,
     castRain,
     submitAnswer,
@@ -55,7 +59,10 @@ function App() {
 
   const inCrystal = endScreen?.kind === 'crystal'
   const celebrating = endScreen?.kind === 'victory'
-  const inputDisabled = !gameStarted || endScreen !== null || showFactsGrid
+  const canPause =
+    gameStarted && !userPaused && endScreen === null && !showFactsGrid
+  const inputDisabled =
+    !gameStarted || endScreen !== null || showFactsGrid || userPaused
   const rainDisabled = inputDisabled
   const symbol = modeSymbol(mode)
 
@@ -77,6 +84,11 @@ function App() {
               >
                 Facts
               </button>
+              {canPause && (
+                <button type="button" className="pause-button" onClick={pauseGame}>
+                  Pause
+                </button>
+              )}
               <p className="round-badge">Round {round}</p>
             </div>
           </header>
@@ -129,6 +141,8 @@ function App() {
           onClose={() => setShowFactsGrid(false)}
         />
       )}
+
+      {userPaused && <PauseOverlay onResume={resumeGame} />}
 
       {endScreen?.kind === 'summary' && (
         <RoundSummaryModal
